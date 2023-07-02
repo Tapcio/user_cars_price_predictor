@@ -1,3 +1,5 @@
+from hmac import new
+from tkinter import N
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -60,22 +62,23 @@ def get_number_from_car_mileage_list(car_mileage):
             string_before_miles = match.group(1)
             return string_before_miles
 
-def cars_number(soup):
-    """
-    Input is the "Soup" from BeautifulSoup() function.
-    Gets the number of the total cars that were found in AutoTrader. 
-    """
-    return int(int(re.search(r"Search from (\d+)", str(soup)).group(1))/100)
-
 def autotrader_scrape_dealer(make):
     ### Creating dataframe with all records below
     soup = extract_cars_autotrader_first_page_dealer(make)
+
+    ### counting amount of pages that we need to scrape through
+    div_element = soup.find("div", class_ = "padding-top-3").text
+    number = int(re.sub(r"\D", "", div_element))
+    if (number/100) > 1:
+        num_of_pages = int(number/100)
+    else:
+        num_of_pages = 0
+
     df = pd.DataFrame(transform_dealer(soup))
-    num_of_pages = cars_number(soup)
-    total_scraping_time = num_of_pages * 0.0117 # 0.7 is amount of seconds it takes on average to scrape details of 1 car
-    print(f"Estimated scraping time: {round((total_scraping_time*100), 2)}min" )
-    for number in range(num_of_pages):
-        soup = extract_cars_autotrader_continuous_pages_dealer(make, number+1)
+    total_scraping_time = num_of_pages * 1.17 # adjusted time to scrape one item
+    print(f"Estimated scraping time: {total_scraping_time}min" )
+    for page_number in range(1, num_of_pages+1):
+        soup = extract_cars_autotrader_continuous_pages_dealer(make, page_number)
         car_list = transform_dealer(soup)
         df_car_list = pd.DataFrame(car_list)
         df_car_list.set_index(df_car_list.index + len(df), inplace=True)  

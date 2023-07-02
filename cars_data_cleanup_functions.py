@@ -60,6 +60,7 @@ def convert_car_color(car_color):
     """
     color_map = {
         "Black Exterior": "black",
+        "Black Stone Exterior": "black",
         "Black Sapphire Metallic Exterior": "black",
         "Alpine White Exterior": "white",
         "White Exterior": "white",
@@ -118,7 +119,16 @@ def convert_car_color(car_color):
         "Beige Exterior": "beige",
         "Magnetite Black Metallic Exterior": "black",
         "Matte Black Wrap Exterior": "black",
-        "Designo Mountain Gray Magno Exterior": "gray"
+        "Designo Mountain Gray Magno Exterior": "gray",
+        "Electric Silver Metallic Exterior": "silver",
+        "Ice White Exterior": "white",
+        "Silver Metallic Exterior": "silver",
+        "Savile Gray Metallic Exterior": "gray",
+        "Tan Exterior": "beige",
+        "Barents Blue Metallic Exterior": "blue",
+        "Caspian Blue Metallic Exterior": "blue",
+        "Ember Black Metallic Exterior": "black",
+        "Crystal White Pearl Exterior": "white"
     }
 
     return color_map.get(car_color, "unknown")
@@ -156,4 +166,6 @@ def car_df_cleanup(car):
         car["model"] = car["model"].map(bmw_model_assignment)
         car = car[~car["model"].apply(lambda x: car["model"].value_counts().get(x, 0) < 50)]
 
+    car.reset_index(inplace=True)
+        
     return car
