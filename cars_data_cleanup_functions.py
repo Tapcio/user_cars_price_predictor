@@ -1,4 +1,5 @@
 # Functions to later move to other file
+from calendar import c
 import re
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -21,18 +22,11 @@ def convert_to_integer(number_as_string):
     else:
         return int(number)
 
-def extract_year_make_model(text):
-    """
-    Splits a string containing multiple values into columns: year, make, and model.
-    Example: "Used 2007 Volvo S40 2.3T" will create new columns: year=2007, make="Volvo", model="S40".
-    """
+def extract_year(text):
+
     year = re.search(r"\b\d{4}\b", text).group()
-    name_temp = re.sub(r"<[^>]+>", "", text).strip()
-    name_parts = name_temp.split()[2:4]
-    make = name_parts[0]
-    model = name_parts[1]
     
-    return pd.Series([year, make, model], index=["year", "make", "model"])
+    return year
 
 def fuel_consumption_to_litres_per_100km(fuel_consumption):
     """
@@ -53,6 +47,12 @@ def fuel_consumption_to_litres_per_100km(fuel_consumption):
     else:
         return 0
     
+def engine_description_cleanup(car):
+    unwanted_rows = car["engine_description"].str.contains("Cylinder") | car["engine_description"].str.contains("Hybrid") | \
+    car["engine_description"].str.contains("Plug-in") | car["engine_description"].str.contains("Electric")
+    car = car[~unwanted_rows]
+    return car
+
 def convert_car_color(car_color):
     """
     conversion of atypical car colours to the usual ones
@@ -133,12 +133,21 @@ def convert_car_color(car_color):
 
     return color_map.get(car_color, "unknown")
 
-def bmw_model_assignment(model_name):
-    if model_name[0].isdigit():
-        digit = re.search(r"\d", model_name)
-        if digit:
-            return int(digit.group())
-    return model_name
+def assigning_segment(car):
+    
+    segments = {
+        "C": ["A3", "S3", "TT", "TTS", "1-Series", "Z4", "A-Class"],
+        "D": ["A4", "A5", "S4", "S5", "3-Series", "C-Class", "CLA-Class", "SLC-Class", "SLK-Class"],
+        "E": ["CL-Class", "A6", "S6", "5-Series", "E-Class", "R-Class"],
+        "F": ["A7", "S7", "A8", "S8", "7-Series", "S-Class", "R8", "CLS-Class", "G-Class"],
+        "S": ["RS-3", "RS-5", "RS-7", "TT-RS", "SL-Class"],
+        "J-low": ["Q3", "Q5", "SQ5", "X1", "X2", "X3", "X4", "GLA-Class", "GLB-Class", "GLC-Class", "GLK-Class"],
+        "J-High": ["SQ7", "SQ8", "X6", "Q7", "Q8", "X7", "X5", "M-Class", "GL-Class", "GLE-Class", "GLS-Class"]
+    }
+    
+    car["segment"] = car["model"].map(lambda x: next((k for k, v in segments.items() if x in v), None))
+    
+    return car
 
 def car_df_cleanup(car):
     """
@@ -148,24 +157,22 @@ def car_df_cleanup(car):
     (Colour == 'unknown', price == 0, and mileage == 0 are dropped.)
     """
     car["dealer distance"] = car["dealer distance"].map(dealer_distance_regex)
-    car[["year", "make", "model"]] = car["name"].apply(extract_year_make_model)
+    car["year"] = car["year"].apply(extract_year)
     car["price"] = car["price"].map(convert_to_integer)
     car["mileage_x"] = car["mileage_x"].map(convert_to_integer)
     car["engine_description"] = car["engine_description"].str.split().str[0]
     car["exterior_colour"] = car["exterior_colour"].map(convert_car_color)
 
-    car = car.drop(["link", "Unnamed: 0", "mileage_y", "name"], axis=1)
+    car = car.drop(["link", "mileage_y", "name"], axis=1)
 
     car = car[car["price"] != 0]
     car = car[car["mileage_x"] != 0]
     car = car[car["exterior_colour"] != "unknown"]
+    car = engine_description_cleanup(car)
+    car = assigning_segment(car)
     car["dealer distance"] = car["dealer distance"].replace(0, int(car["dealer distance"].mean()))
+    
 
-    # below is specific for BMW, as model names come as 535i or 335i instead of 3, or 5. (3 series, 5 series...)
-    if car["make"][0] == "BMW":
-        car["model"] = car["model"].map(bmw_model_assignment)
-        car = car[~car["model"].apply(lambda x: car["model"].value_counts().get(x, 0) < 50)]
-
-    car.reset_index(inplace=True)
+    car.reset_index(drop=True, inplace=True)
         
     return car

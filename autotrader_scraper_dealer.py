@@ -1,27 +1,109 @@
-from hmac import new
-from tkinter import N
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 import re
 
-def extract_cars_autotrader_first_page_dealer(make):
+def extract_cars_autotrader_first_page(make, model):
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"}
-    url = f"https://www.autotrader.com/cars-for-sale/{make}/roselle-nj?endYear=2015&isNewSearch=true&marketExtension=include&numRecords=100&searchRadius=0&sellerTypes=d&showAccelerateBanner=false&sortBy=relevance&startYear=2005&zip=07203"
+    url = f"https://www.autotrader.com/cars-for-sale/{make}/{model}/roselle-nj?endYear=2020&isNewSearch=true&marketExtension=include&numRecords=100&searchRadius=0&sellerTypes=d&showAccelerateBanner=false&sortBy=relevance&startYear=2010&zip=07203"
     r = requests.get(url, headers)
     soup = BeautifulSoup(r.content, "html.parser")
     return soup
 
-def extract_cars_autotrader_continuous_pages_dealer(make, num_of_pages):
+def extract_cars_autotrader_continuous_pages(make, model, page_number):
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"}
-    url = f"https://www.autotrader.com/cars-for-sale/{make}/roselle-nj?endYear=2015&firstRecord={num_of_pages}00&isNewSearch=false&marketExtension=include&numRecords=100&searchRadius=0&sellerTypes=d&showAccelerateBanner=false&sortBy=relevance&startYear=2005&zip=07203"
+    url = f"https://www.autotrader.com/cars-for-sale/{make}/{model}/roselle-nj?endYear=2020&firstRecord={page_number}00&isNewSearch=false&marketExtension=include&numRecords=100&searchRadius=0&sellerTypes=d&showAccelerateBanner=false&sortBy=relevance&startYear=2010&zip=07203"
     r = requests.get(url, headers)
     soup = BeautifulSoup(r.content, "html.parser")
     return soup
 
-def transform_dealer(soup):
+def select_models_list(make):
+    bmw_models = [
+    "X1",
+    "X2",
+    "X3",
+    "X4",
+    "X5",
+    "X6",
+    "X7",
+    "Z3",
+    "Z4",
+    "Z8",
+    "1-Series",
+    "3-Series",
+    "5-Series",
+    "7-Series"
+    ]
+    audi_models = [
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "Q3",
+        "Q5",
+        "Q7",
+        "Q8",
+        "R8",
+        "RS-3",
+        "RS-4",
+        "RS-5",
+        "RS-6",
+        "RS-7",
+        "S3",
+        "S4",
+        "S5",
+        "S6",
+        "S7",
+        "S8",
+        "SQ5",
+        "SQ7",
+        "SQ8",
+        "TT",
+        "TT-RS",
+        "TTS"
+    ]
+    mercedes_benz_models = [
+        "A-Class",
+        "B-Class",
+        "C-Class",
+        "CL-Class",
+        "CLA-Class",
+        "CLK-Class",
+        "CLS-Class",
+        "E-Class",
+        "EQB-Class",
+        "EQE-Class",
+        "EQS-Class",
+        "G-Class",
+        "GL-Class",
+        "GLA-Class",
+        "GLB-Class",
+        "GLC-Class",
+        "GLE-Class",
+        "GLK-Class",
+        "GLS-Class",
+        "M-Class",
+        "R-Class",
+        "S-Class",
+        "SL-Class",
+        "SLC-Class",
+        "SLK-Class"
+    ]
+    
+    if make == "BMW":
+        return bmw_models
+    elif make == "Audi":
+        return audi_models
+    else:
+        return mercedes_benz_models
+
+def transform_car_soup(soup, make, model):
     car_info_list = []
+    
     car_info = soup.find_all("div", class_ = "padding-0 panel-body")
+    
     for car in car_info:
         car_name = car.find("h3")
         try: 
@@ -38,7 +120,9 @@ def transform_dealer(soup):
         link = "https://www.autotrader.com" + car.find("a", {"rel":"nofollow"}).get("href")
         
         car_info = {
-                    "name": car_name,
+                    "name": make,
+                    "model": model,
+                    "year": car_name,
                     "price": car_price,
                     "mileage": car_mileage,
                     "dealer distance": dealer_distance,
@@ -62,37 +146,51 @@ def get_number_from_car_mileage_list(car_mileage):
             string_before_miles = match.group(1)
             return string_before_miles
 
-def autotrader_scrape_dealer(make):
+def autotrader_scrape_all_cars(make):
     ### Creating dataframe with all records below
-    soup = extract_cars_autotrader_first_page_dealer(make)
+    
+    models_list = select_models_list(make)
+    scraped_list = []
 
-    ### counting amount of pages that we need to scrape through
-    div_element = soup.find("div", class_ = "padding-top-3").text
-    number = int(re.sub(r"\D", "", div_element))
-    if (number/100) > 1:
-        num_of_pages = int(number/100)
-    else:
-        num_of_pages = 0
+    
+    for model in models_list:
+        try:
+            soup = extract_cars_autotrader_first_page(make, model)
+            ### getting and counting amount of pages that we need to scrape through
+            div_element = soup.find("div", class_ = "padding-top-3").text
+            number = int(re.sub(r"\D", "", div_element))
+            if (number/100) > 1:
+                num_of_pages = int(number/100)
+            else:
+                num_of_pages = 0
+            
+            scraped_list.extend(transform_car_soup(soup, make, model))     
+            
+            # Autotrader only allows to scrape 1000 records
+            # Anything above that scrapes as duplicates of (900-1000)
+            if num_of_pages > 9:
+                num_of_pages = 9
+            
+            for page_number in range(1, num_of_pages+1):
+                
+                soup = extract_cars_autotrader_continuous_pages(make, model, page_number)
+                scraped_list.extend(transform_car_soup(soup, make, model))
+            print(f"{model} Scraped.")   
+        except Exception as e:
+            error_message = f"Error scraping {model}: {str(e)}"
+            print(error_message)   
+    df = pd.DataFrame(scraped_list)
 
-    df = pd.DataFrame(transform_dealer(soup))
-    total_scraping_time = num_of_pages * 1.17 # adjusted time to scrape one item
-    print(f"Estimated scraping time: {total_scraping_time}min" )
-    for page_number in range(1, num_of_pages+1):
-        soup = extract_cars_autotrader_continuous_pages_dealer(make, page_number)
-        car_list = transform_dealer(soup)
-        df_car_list = pd.DataFrame(car_list)
-        df_car_list.set_index(df_car_list.index + len(df), inplace=True)  
-        df = pd.concat([df, df_car_list])
-
-    # Reset the index
-    df.reset_index(drop=True, inplace=True)
     return df
 
-def scrape_details_dealer(df):
+def scrape_car_details(df):
     car_details_list = []
+    
+    print(f"Scraping details of each car. Total cars to scrape: {df.shape[0]}")
+    
     for index, row in df.iterrows():
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"}
-        r = requests.get(row.link, headers)
+        r = requests.get(row["link"], headers)
         soup = BeautifulSoup(r.content, "html.parser")
         
         try:
@@ -121,5 +219,5 @@ def autotrader_car_scraper(make):
     """
     Main Function that scrapes all details of specific make that are at the moment on the website.
     """
-    complete_dataframe = scrape_details_dealer(autotrader_scrape_dealer(make))
-    return complete_dataframe
+    df = scrape_car_details(autotrader_scrape_all_cars(make))
+    return df
