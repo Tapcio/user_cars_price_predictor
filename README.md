@@ -1,16 +1,18 @@
-# user_cars_price_predictor
+# Under Construction #
 
-### Under Construction ### 
+# Car Price Predictor #
 
-My idea is to create an app that will show predicted prices for years from 2005-2015 once car make and model are selected.
+This is a Learning Project for me, as I have never really created any app before, or worked on a dirty data to fit to the Machine Learning model.
 
-The app will have following features:
-1. Scraping autotrader.com to gather car details for the price predictor (potentially more websites will be added later).
-2. Cleaning up the data automatically once dataset is loaded.
-3. Fitting to the ML model and predicting the prices.
-4. WebApp with simple UI that allows user to select car make and model, then shows predicted price.
+This app contains following functions:
 
-Further enhancements once the above is done:
+1. Autotrader.com scraper. It will scrape from the website details of all models from the seleted make. (So far it is only adjusted to work on Audi, BMW and Mercedes-Benz, but I will add an option to select more car makes.
+2. Machine Learning Price Prediction. Once you have scraped date this will clean the data and fit the model. After my analysis I have selected XGBoost, as it made the best predictions.
+3. You can select multiple features about your car: Make, Model, Year, Mileage, Engine Size, Drive Type and Equipment. Based on the information it will predict the price of the car.
 
-1. Add delivery costs from car destination to the port in NJ and freight costs to Poland.
-2. Scraping Otomoto.pl, a local used cars website for the same, so the prices can be compared.
+Future enhancements:
+1. I want add an option to compare with car prices in Poland (As I am Polish) and check whether it will be worth buying the car in the US and transport to Poland.
+2. On the 2nd page I will add the links with offers, or maybe pictures to the adds with cars that are close to the selected options.
+
+# requirements # 
+`plotly` `dash` `requests` `bs4` `re` `sklearn` `xgboost` `joblib`
