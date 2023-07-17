@@ -54,5 +54,5 @@ def update_output(
 
     df = pd.DataFrame(data=[values_for_prediction], columns=columns)
     prediction = loaded_model.predict(df)
-    price = round(prediction[0], 2)
+    price = round((prediction[0] * 1), 2)
     return f"Car Price: ${price}"
