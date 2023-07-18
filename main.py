@@ -1,15 +1,16 @@
-import plotly.graph_objects as go
-import joblib
-import pandas as pd
 import dash_bootstrap_components as dbc
-import dash_daq as daq
-from scraping import cars_data_cleanup_functions
+from utils.scraping_utils import cars_data_cleanup_functions
 
-from dash import Dash, dcc, html, Input, Output, State
+from dash import Dash, html, Input, Output, State
 
-from web_utils.utils_input import row1, row2, row3, row4
-from web_utils.utils_output import row5, navbar
-from web_utils.utils_functions import update_output
+from utils.dash_utils.dash_input_utils import (
+    dash_row_one,
+    dash_row_two,
+    dash_row_three,
+    dash_row_four,
+)
+from utils.dash_utils.dash_output_utils import dash_row_five, navbar
+from utils.dash_utils.dash_functions import update_output
 
 cars = cars_data_cleanup_functions.pre_eda_car_df()
 
@@ -25,17 +26,17 @@ app.layout = html.Div(
         navbar,
         html.Div(
             [
-                row1,
-                row2,
-                row3,
-                row4,
+                dash_row_one,
+                dash_row_two,
+                dash_row_three,
+                dash_row_four,
             ],
             className="container",
             style={"padding-top": "25px", "padding-bottom": "25px", "color": "black"},
         ),
         html.Div(
             [
-                row5,
+                dash_row_five,
                 html.Div(id="prediction", style={"font-size": "50px"}),
             ],
             className="container",
@@ -74,7 +75,9 @@ def callback_update_output(
     if None in [mileage, year, engine_size, drive_type, equipment, make, model]:
         return ""
 
-    return update_output(n_clicks, mileage, year, engine_size, drive_type, equipment, make, model)
+    return update_output(
+        n_clicks, mileage, year, engine_size, drive_type, equipment, make, model
+    )
 
 
 @app.callback(Output("mileage-gauge", "value"), Input("mileage-slider", "value"))

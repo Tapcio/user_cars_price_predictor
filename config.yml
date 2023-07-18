@@ -1,0 +1,3 @@
+# URLs for accessing the pages to scrape
+URL_FIRST_PAGE: f"https://www.autotrader.com/cars-for-sale/{make}/{model}/roselle-nj?endYear=2020&isNewSearch=true&marketExtension=include&numRecords=100&searchRadius=0&sellerTypes=d&showAccelerateBanner=false&sortBy=relevance&startYear=2010&zip=07203"
+URL_CONTINUOUS_PAGE: f"https://www.autotrader.com/cars-for-sale/{make}/{model}/roselle-nj?endYear=2020&firstRecord={page_number}00&isNewSearch=false&marketExtension=include&numRecords=100&searchRadius=0&sellerTypes=d&showAccelerateBanner=false&sortBy=relevance&startYear=2010&zip=07203"
