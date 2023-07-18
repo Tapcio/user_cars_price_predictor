@@ -1,10 +1,9 @@
 # Internal Function Files
-import scraping.autotrader_scraper_dealer as a
-import scraping.cars_data_cleanup_functions as c
+import utils.scraping_utils.autotrader_scraper_dealer as a
+import utils.scraping_utils.cars_data_cleanup_functions as c
 
 # Typical libraries :-)
 import pandas as pd
-import numpy as np
 
 # Pipe For Sequential Function Running
 from toolz import pipe
@@ -30,9 +29,11 @@ warnings.filterwarnings("ignore")
 def loading_cars_dataframe_for_fitting():
     # getting data from csv and merging to one DataFrame
 
-    audi = c.car_df_cleanup(pd.read_csv("scraping/data/audi_full.csv")).reset_index(drop=True)
-    bmw = c.car_df_cleanup(pd.read_csv("scraping/data/bmw_full.csv")).reset_index(drop=True)
-    mercedes = c.car_df_cleanup(pd.read_csv("scraping/data/mercedes_full.csv")).reset_index(drop=True)
+    audi = c.car_df_cleanup(pd.read_csv("data/audi_full.csv")).reset_index(drop=True)
+    bmw = c.car_df_cleanup(pd.read_csv("data/bmw_full.csv")).reset_index(drop=True)
+    mercedes = c.car_df_cleanup(pd.read_csv("data/mercedes_full.csv")).reset_index(
+        drop=True
+    )
     cars = pd.concat([audi, bmw, mercedes], axis=0, ignore_index=True)
     cars = cars.drop_duplicates(ignore_index=True).reset_index(drop=True)
     cars = cars.drop(["Unnamed: 0", "exterior_colour", "name"], axis=1)
@@ -141,7 +142,10 @@ def fit_theXGBoost_model_and_save_model(cars):
 
     grid_search.fit(X_train, y_train)
 
-    joblib.dump(grid_search.best_estimator_, "model_fitting/final_car_price_prediction_model.pkl")
+    joblib.dump(
+        grid_search.best_estimator_,
+        "model_fitting/final_car_price_prediction_model.pkl",
+    )
     joblib.dump(list(X.columns), "model_fitting/column_names.pkl")
 
 
